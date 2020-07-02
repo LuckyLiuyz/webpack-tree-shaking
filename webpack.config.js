@@ -13,7 +13,9 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
  * 1、需要注意的是，Tree-shaking 并不是指 Webpack 中的某一个配置选项，而是一组功能搭配使用过后实现的效果，这组功能在生产模式下都会自动启用，所以使用生产模式打包就会有 Tree-shaking 的效果。
  * 2、Webpack 的 Tree-shaking 特性在生产模式（production）下会自动开启。打包完成以后我们打开输出的 main.bundle.js 发现：1）未被引用的方法；2）被引用的方法中始终不会执行的代码；都被剔除掉了。
  * 3、将mode设置为 none 时，也就是不开启任何内置功能和插件。打包完成过后，我们再次找到输出的 bundle.js 文件。虽然外部没有使用这里的 Link 函数和 Heading 函数，但是仍然导出了它们。
- * 
+ * 4、开启tree shaking: 
+ *  4.1、配置usedExports：true, 此时未被引用的 Link 函数和 Heading 函数,虽然不再被导出了，但是他们的函数定义却还在打包后的结果中。
+ *  4.2、对于未引用代码还被导出的问题，我们通过开启压缩代码功能，自动压缩掉这些没有用到的代码，即添加配置：minimize: true
  */
 
 let config = {
@@ -47,6 +49,11 @@ module.exports = (env, argv) => {
   if (env === 'development') {
     return merge(config, {
       mode: env,
+      optimization: {
+        usedExports: true, // 模块只导出被使用的成员,如果只开启usedExports，未引用代码虽然不被导出了，但还是会在打包结果中。
+        // minimize: true, // 同时开启usedExports、minimize，main.bundle.js中，还是出现了未被引用的代码.....??? 
+        // sideEffects: true, // sideEffects 和 usedExports（更多被认为是 tree shaking）是两种不同的优化方式。https://webpack.docschina.org/guides/tree-shaking/
+      }
     });
   } else {
     return merge(config, {
